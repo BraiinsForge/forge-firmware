@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+repo_root=$(cd -- "$script_dir/.." && pwd)
+
+if (($# > 1)); then
+    echo "usage: $0 [VERSION]" >&2
+    exit 64
+fi
+
+version=${1-}
+if [[ -n $version ]]; then
+    if [[ ! $version =~ ^[1-9][0-9]*$ ]]; then
+        echo "VERSION must be a positive decimal without leading zeroes" >&2
+        exit 64
+    fi
+    if ((${#version} > 10)) || ((10#$version > 4294967295)); then
+        echo "VERSION must fit in an unsigned 32-bit integer" >&2
+        exit 64
+    fi
+    label=v$version
+else
+    label=master
+fi
+
+if [[ ! -f $repo_root/forge-micro/flake.nix ]]; then
+    echo "forge-micro submodule is not initialized; run git submodule update --init" >&2
+    exit 69
+fi
+
+build=(nix build --no-link --print-out-paths "$repo_root#forge-axe")
+if [[ -n $version ]]; then
+    store_path=$(FORGE_FW_VERSION=$version "${build[@]}" --impure)
+else
+    store_path=$("${build[@]}")
+fi
+
+output_dir=$script_dir/build
+mkdir -p -- "$output_dir"
+for extension in bin uf2; do
+    source_file=$store_path/forge-axe-$label.$extension
+    if [[ ! -f $source_file ]]; then
+        echo "missing build output: $source_file" >&2
+        exit 70
+    fi
+    install -m 0644 -- "$source_file" "$output_dir/forge-axe-$label.$extension"
+done
