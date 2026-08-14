@@ -1,0 +1,45 @@
+name: Build Forge Axe firmware
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@v3
+
+      - name: Build master firmware
+        if: github.ref == 'refs/heads/master'
+        run: ./forge-axe/build-firmware
+
+      - name: Build tagged firmware
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          if [[ ! $version =~ ^[1-9][0-9]*$ ]]; then
+            echo "tag must have the form v<N>, where N is a positive decimal" >&2
+            exit 64
+          fi
+          ./forge-axe/build-firmware "$version"
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v7
+        with:
+          name: forge-axe-${{ github.ref_name }}
+          path: forge-axe/build/*
+          if-no-files-found: error
