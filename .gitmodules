@@ -1,0 +1,3 @@
+[submodule "forge-micro"]
+	path = forge-micro
+	url = https://github.com/BraiinsForge/forge-micro.git
