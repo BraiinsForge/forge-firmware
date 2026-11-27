@@ -29,9 +29,13 @@ if [[ ! -f $repo_root/forge-micro/flake.nix ]]; then
     exit 69
 fi
 
-build=(nix build --no-link --print-out-paths "$repo_root#forge-axe")
+# forge-micro resolves its cargo units through rostnix, which runs during
+# evaluation; its own CI builds the forge-axe outputs with the same option.
+build=(nix build --no-link --print-out-paths
+    --option allow-unsafe-native-code-during-evaluation true
+    "$repo_root#forge-axe")
 if [[ -n $version ]]; then
-    store_path=$(FORGE_FW_VERSION=$version "${build[@]}" --impure)
+    store_path=$(UBOS_FW_VERSION=$version "${build[@]}" --impure)
 else
     store_path=$("${build[@]}")
 fi

@@ -45,8 +45,8 @@ printf tag-uf2 >"$tmp/store-v42/forge-axe-v42.uf2"
 
 cat >"$tmp/bin/nix" <<EOF
 #!/usr/bin/env bash
-printf '%s\n' "\${FORGE_FW_VERSION-}:\$*" >>'$tmp/nix-calls'
-case "\${FORGE_FW_VERSION-}" in
+printf '%s\n' "\${UBOS_FW_VERSION-}:\$*" >>'$tmp/nix-calls'
+case "\${UBOS_FW_VERSION-}" in
     "") printf '%s\n' '$tmp/store-master' ;;
     42) printf '%s\n' '$tmp/store-v42' ;;
     *) exit 64 ;;
@@ -62,5 +62,5 @@ PATH="$tmp/bin:$PATH" "$script" 42
 cmp "$tmp/store-v42/forge-axe-v42.bin" "$repo_root/forge-axe/build/forge-axe-v42.bin"
 cmp "$tmp/store-v42/forge-axe-v42.uf2" "$repo_root/forge-axe/build/forge-axe-v42.uf2"
 
-grep -Fxq ":build --no-link --print-out-paths $repo_root#forge-axe" "$tmp/nix-calls"
-grep -Fxq "42:build --no-link --print-out-paths $repo_root#forge-axe --impure" "$tmp/nix-calls"
+grep -Fxq ":build --no-link --print-out-paths --option allow-unsafe-native-code-during-evaluation true $repo_root#forge-axe" "$tmp/nix-calls"
+grep -Fxq "42:build --no-link --print-out-paths --option allow-unsafe-native-code-during-evaluation true $repo_root#forge-axe --impure" "$tmp/nix-calls"

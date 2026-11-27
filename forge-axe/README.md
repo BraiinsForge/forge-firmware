@@ -1,8 +1,8 @@
 # Forge Axe firmware
 
 Firmware for the [Braiins Forge Axe](https://braiinsforge.com/products/braiins-forge-axe).
-The source package is named `braiins-axe` inside the `forge-micro` submodule;
-published firmware is named `forge-axe`.
+The firmware is built by the `forge-axe-image` and `forge-axe-uf2` packages of
+the `forge-micro` submodule; this repository renames their outputs.
 
 ## Build
 
