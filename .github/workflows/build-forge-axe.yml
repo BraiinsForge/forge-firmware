@@ -30,14 +30,25 @@ jobs:
       # never uses.
       - name: Free disk space
         run: |
-          df -h /
+          df -h / /tmp
           sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
             /usr/local/.ghcup /opt/hostedtoolcache
           sudo docker image prune --all --force >/dev/null
-          df -h /
+          df -h / /tmp
 
+      # Keep build trees on the root disk that the cleanup enlarges,
+      # whatever the runner image mounts at /tmp.
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@v3
+        with:
+          extra-conf: |
+            build-dir = /nix/var/nix/builds
+
+      - name: Show build locations
+        run: |
+          sudo mkdir -p /nix/var/nix/builds
+          nix config show build-dir
+          df -h / /tmp
 
       # No binary cache carries forge-micro's cross toolchain or its
       # per-crate derivations, so without this every run rebuilds all of
@@ -73,7 +84,7 @@ jobs:
       - name: Report disk usage
         if: always()
         run: |
-          df -h /
+          df -h / /tmp
           du -sh /nix/store
 
       - name: Publish master prerelease
