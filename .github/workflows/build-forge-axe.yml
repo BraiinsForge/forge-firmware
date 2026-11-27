@@ -21,6 +21,19 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      # forge-micro's cross toolchain is not in any binary cache, so a
+      # cold build compiles gcc on top of the firmware's store. Free space
+      # differs between runner images and one run ran out of it, so drop
+      # preinstalled SDKs, tool caches and container images this job
+      # never uses.
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /opt/hostedtoolcache
+          sudo docker image prune --all --force >/dev/null
+          df -h /
+
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@v3
 
@@ -38,6 +51,12 @@ jobs:
             exit 64
           fi
           ./forge-axe/build-firmware "$version"
+
+      - name: Report disk usage
+        if: always()
+        run: |
+          df -h /
+          du -sh /nix/store
 
       - name: Publish master prerelease
         if: github.ref == 'refs/heads/master'
