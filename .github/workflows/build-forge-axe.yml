@@ -118,7 +118,10 @@ jobs:
           fi
           gh release upload "$tag" forge-axe/build/* --clobber
 
+      # Other branches only build: the artifact name carries the ref, and
+      # a branch name may hold a `/` that upload-artifact refuses.
       - name: Upload firmware
+        if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v7
         with:
           name: forge-axe-${{ github.ref_name }}
