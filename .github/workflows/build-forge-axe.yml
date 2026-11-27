@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: write
+  # Purging superseded Nix store caches deletes them through the API.
+  actions: write
 
 jobs:
   build:
@@ -37,8 +39,24 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@v3
 
+      # No binary cache carries forge-micro's cross toolchain or its
+      # per-crate derivations, so without this every run rebuilds all of
+      # them. Each commit saves the store under its own key and restores
+      # the newest earlier one; the superseded caches of the ref are
+      # purged so the repository stays under GitHub's 10 GB cache limit.
+      - name: Restore and save Nix store
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ github.sha }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size-linux: 8G
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-
+          purge-created: 0
+          purge-primary-key: never
+
       - name: Build master firmware
-        if: github.ref == 'refs/heads/master'
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         run: ./forge-axe/build-firmware
 
       - name: Build tagged firmware
